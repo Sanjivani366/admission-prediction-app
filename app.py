@@ -14,13 +14,10 @@ st.set_page_config(
 # --- Custom Styling & CSS ---
 st.markdown("""
     <style>
-    /* Main Background & Font */
     .main {
         background-color: #f8f9fa;
         font-family: 'Inter', sans-serif;
     }
-    
-    /* Header Styling */
     .header-container {
         background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
         padding: 2rem;
@@ -30,28 +27,15 @@ st.markdown("""
         margin-bottom: 2rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    
     .header-container h1 {
         font-size: 2.2rem;
         font-weight: 700;
         margin-bottom: 0.5rem;
     }
-    
     .header-container p {
         font-size: 1rem;
         opacity: 0.9;
     }
-
-    /* Card Containers */
-    .card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 0.75rem;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-        margin-bottom: 1.5rem;
-    }
-
-    /* Result Box Styling */
     .result-admit {
         background-color: #ecfdf5;
         border: 1px solid #10b981;
@@ -63,7 +47,6 @@ st.markdown("""
         font-weight: 600;
         margin-top: 1rem;
     }
-
     .result-waitlist {
         background-color: #fffbeb;
         border: 1px solid #f59e0b;
@@ -81,7 +64,6 @@ st.markdown("""
 # --- Load the Model ---
 @st.cache_resource
 def load_model():
-    # Ensure your model file is named 'model.pkl' or update the filename here
     with open('admission_model.pkl', 'rb') as file:
         model = pickle.load(file)
     return model
@@ -89,7 +71,7 @@ def load_model():
 try:
     model = load_model()
 except FileNotFoundError:
-    st.error("Model file 'model.pkl' not found! Please place it in the same directory as app.py.")
+    st.error("Model file 'admission_model.pkl' not found! Please place it in the same directory as app.py.")
     st.stop()
 
 # --- App Header ---
@@ -113,36 +95,42 @@ with st.form("prediction_form"):
         international = st.selectbox("International Student?", ["No", "Yes"])
 
     with col2:
-        gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+        gender = st.selectbox("Gender", ["Female", "Male", "Other"])
         race = st.selectbox("Race / Ethnicity", ["Asian", "Black", "Hispanic", "White", "Other"])
-        major = st.selectbox("Undergraduate Major", ["Business", "Engineering", "Computer Science", "Humanities", "Sciences", "Other"])
-        work_industry = st.selectbox("Work Industry", ["Finance", "Technology", "Consulting", "Healthcare", "Education", "Other"])
+        major = st.selectbox("Undergraduate Major", ["Business", "Computer Science", "Engineering", "Humanities", "Sciences", "Other"])
+        work_industry = st.selectbox("Work Industry", ["Consulting", "Education", "Finance", "Healthcare", "Technology", "Other"])
 
     submit_button = st.form_submit_button(label="Predict Outcome", use_container_width=True)
 
-# --- Prediction Logic ---
+# --- Prediction Logic with Encoding ---
 if submit_button:
-    # Note: Depending on how your pipeline/encoder was trained, categorical inputs 
-    # may need proper encoding. If your model expects raw values or encoded columns, 
-    # adapt this DataFrame array construction to match your training features.
+    # Map categorical text inputs to numeric values (adjust mapping indices if your training data used a specific order)
+    gender_map = {"Female": 0, "Male": 1, "Other": 2}
+    international_map = {"No": 0, "Yes": 1}
     
-    # Example input dataframe mapping your exact features:
+    # Simple alphabetical or categorical integer indexing (adjust if your training encoder used different mappings)
+    race_list = ["Asian", "Black", "Hispanic", "Other", "White"]
+    major_list = ["Business", "Computer Science", "Engineering", "Humanities", "Other", "Sciences"]
+    industry_list = ["Consulting", "Education", "Finance", "Healthcare", "Other", "Technology"]
+
     input_data = pd.DataFrame({
-        'gender': [gender],
-        'international': [1 if international == "Yes" else 0],
-        'gpa': [gpa],
-        'major': [major],
-        'race': [race],
-        'gmat': [gmat],
-        'work_exp': [work_exp],
-        'work_industry': [work_industry]
+        'gender': [gender_map.get(gender, 0)],
+        'international': [international_map.get(international, 0)],
+        'gpa': [float(gpa)],
+        'major': [major_list.index(major) if major in major_list else 0],
+        'race': [race_list.index(race) if race in race_list else 0],
+        'gmat': [float(gmat)],
+        'work_exp': [float(work_exp)],
+        'work_industry': [industry_list.index(work_industry) if work_industry in industry_list else 0]
     })
 
     try:
-        # Predict class and probabilities
+        # Reorder columns to match exact training feature order if needed
+        expected_features = ['gender', 'international', 'gpa', 'major', 'race', 'gmat', 'work_exp', 'work_industry']
+        input_data = input_data[expected_features]
+
         prediction = model.predict(input_data)[0]
         
-        # Display Result
         if str(prediction).lower() == "admit":
             st.markdown(f"""
                 <div class="result-admit">
@@ -158,4 +146,4 @@ if submit_button:
             
     except Exception as e:
         st.error(f"Error during prediction: {e}")
-        st.info("Tip: Ensure your input formatting matches the exact schema and encoding expected by your pickled model.")
+        st.info("Tip: If your model was trained using specific LabelEncoders or OneHotEncoders saved separately, make sure to load and apply those exact encoders.")
