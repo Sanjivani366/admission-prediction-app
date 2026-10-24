@@ -11,52 +11,80 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Custom Styling & CSS ---
+# --- Dark & Attractive Custom CSS Styling ---
 st.markdown("""
     <style>
-    .main {
-        background-color: #f8f9fa;
+    /* Main Background & Font */
+    .stApp {
+        background-color: #0f172a;
         font-family: 'Inter', sans-serif;
+        color: #f8fafc;
     }
+    
+    /* Header Styling */
     .header-container {
         background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-        padding: 2rem;
+        padding: 2.5rem;
         border-radius: 1rem;
         color: white;
         text-align: center;
         margin-bottom: 2rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
     }
+    
     .header-container h1 {
-        font-size: 2.2rem;
-        font-weight: 700;
+        font-size: 2.4rem;
+        font-weight: 800;
         margin-bottom: 0.5rem;
+        letter-spacing: -0.025em;
     }
+    
     .header-container p {
-        font-size: 1rem;
+        font-size: 1.1rem;
         opacity: 0.9;
     }
-    .result-admit {
-        background-color: #ecfdf5;
-        border: 1px solid #10b981;
-        color: #065f46;
-        padding: 1.25rem;
-        border-radius: 0.75rem;
-        text-align: center;
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-top: 1rem;
+
+    /* Form Card Container Styling */
+    div[data-testid="stForm"] {
+        background-color: #1e293b;
+        padding: 2rem;
+        border-radius: 1rem;
+        border: 1px solid #334155;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
     }
-    .result-waitlist {
-        background-color: #fffbeb;
-        border: 1px solid #f59e0b;
-        color: #92400e;
-        padding: 1.25rem;
+
+    /* Input Labels Color */
+    .stTextInput label, .stNumberInput label, .stSelectbox label {
+        color: #cbd5e1 !important;
+        font-weight: 500;
+    }
+
+    /* Result Box Styling - Admit */
+    .result-admit {
+        background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+        border: 1px solid #10b981;
+        color: #ecfdf5;
+        padding: 1.5rem;
         border-radius: 0.75rem;
         text-align: center;
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-top: 1rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-top: 1.5rem;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    /* Result Box Styling - Waitlist */
+    .result-waitlist {
+        background: linear-gradient(135deg, #92400e 0%, #b45309 100%);
+        border: 1px solid #f59e0b;
+        color: #fffbeb;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        text-align: center;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-top: 1.5rem;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -71,7 +99,7 @@ def load_model():
 try:
     model = load_model()
 except FileNotFoundError:
-    st.error("Model file 'admission_model.pkl' not found! Please place it in the same directory as app.py.")
+    st.error("Model file 'admission_model.pkl' sapadla nahi! Krupaya tyala app.py chya barobar theva.")
     st.stop()
 
 # --- App Header ---
@@ -86,12 +114,11 @@ st.markdown("""
 with st.form("prediction_form"):
     st.markdown("### 👤 Personal & Academic Details")
     
-    # නව ඇතුළත් කිරීම් (Student Name & Specialization Added)
     col_p1, col_p2 = st.columns(2)
     with col_p1:
-        student_name = st.text_input("Student Full Name", placeholder="e.g., John Doe")
+        student_name = st.text_input("Student Full Name", placeholder="e.g., Sanjivani Rajput")
     with col_p2:
-        specialization = st.selectbox("Intended Specialization", ["Finance", "Marketing", "Business Analytics", "Supply Chain", "General Management", "Other"])
+        specialization = st.selectbox("Intended Specialization", ["Business Analytics", "Finance", "Marketing", "Supply Chain", "General Management", "Other"])
 
     st.markdown("---")
     st.markdown("### 📊 Candidate Profile Information")
@@ -112,7 +139,7 @@ with st.form("prediction_form"):
 
     submit_button = st.form_submit_button(label="Predict Outcome", use_container_width=True)
 
-# --- Prediction Logic with Encoding ---
+# --- Prediction Logic ---
 if submit_button:
     gender_map = {"Female": 0, "Male": 1, "Other": 2}
     international_map = {"No": 0, "Yes": 1}
@@ -121,7 +148,6 @@ if submit_button:
     major_list = ["Business", "Computer Science", "Engineering", "Humanities", "Other", "Sciences"]
     industry_list = ["Consulting", "Education", "Finance", "Healthcare", "Other", "Technology"]
 
-    # मॉडेलसाठी आवश्यक डेटा फ्रम तयार करणे (Model Features)
     input_data = pd.DataFrame({
         'gender': [gender_map.get(gender, 0)],
         'international': [international_map.get(international, 0)],
@@ -139,7 +165,6 @@ if submit_button:
 
         prediction = model.predict(input_data)[0]
         
-        # नाव टाकले असल्यास आउटपुटमध्ये दिसेल
         name_display = f" for <b>{student_name}</b>" if student_name else ""
         spec_display = f" ({specialization} Specialization)" if specialization else ""
 
