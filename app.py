@@ -84,7 +84,17 @@ st.markdown("""
 
 # --- Input Form ---
 with st.form("prediction_form"):
-    st.markdown("### Candidate Profile Information")
+    st.markdown("### 👤 Personal & Academic Details")
+    
+    # නව ඇතුළත් කිරීම් (Student Name & Specialization Added)
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+        student_name = st.text_input("Student Full Name", placeholder="e.g., John Doe")
+    with col_p2:
+        specialization = st.selectbox("Intended Specialization", ["Finance", "Marketing", "Business Analytics", "Supply Chain", "General Management", "Other"])
+
+    st.markdown("---")
+    st.markdown("### 📊 Candidate Profile Information")
     
     col1, col2 = st.columns(2)
     
@@ -104,15 +114,14 @@ with st.form("prediction_form"):
 
 # --- Prediction Logic with Encoding ---
 if submit_button:
-    # Map categorical text inputs to numeric values (adjust mapping indices if your training data used a specific order)
     gender_map = {"Female": 0, "Male": 1, "Other": 2}
     international_map = {"No": 0, "Yes": 1}
     
-    # Simple alphabetical or categorical integer indexing (adjust if your training encoder used different mappings)
     race_list = ["Asian", "Black", "Hispanic", "Other", "White"]
     major_list = ["Business", "Computer Science", "Engineering", "Humanities", "Other", "Sciences"]
     industry_list = ["Consulting", "Education", "Finance", "Healthcare", "Other", "Technology"]
 
+    # मॉडेलसाठी आवश्यक डेटा फ्रम तयार करणे (Model Features)
     input_data = pd.DataFrame({
         'gender': [gender_map.get(gender, 0)],
         'international': [international_map.get(international, 0)],
@@ -125,25 +134,27 @@ if submit_button:
     })
 
     try:
-        # Reorder columns to match exact training feature order if needed
         expected_features = ['gender', 'international', 'gpa', 'major', 'race', 'gmat', 'work_exp', 'work_industry']
         input_data = input_data[expected_features]
 
         prediction = model.predict(input_data)[0]
         
+        # नाव टाकले असल्यास आउटपुटमध्ये दिसेल
+        name_display = f" for <b>{student_name}</b>" if student_name else ""
+        spec_display = f" ({specialization} Specialization)" if specialization else ""
+
         if str(prediction).lower() == "admit":
             st.markdown(f"""
                 <div class="result-admit">
-                    🎉 Prediction: <b>ADMIT</b>
+                    🎉 Prediction{name_display}{spec_display}: <b>ADMIT</b>
                 </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
                 <div class="result-waitlist">
-                    ⏳ Prediction: <b>WAITLIST</b>
+                    ⏳ Prediction{name_display}{spec_display}: <b>WAITLIST</b>
                 </div>
             """, unsafe_allow_html=True)
             
     except Exception as e:
         st.error(f"Error during prediction: {e}")
-        st.info("Tip: If your model was trained using specific LabelEncoders or OneHotEncoders saved separately, make sure to load and apply those exact encoders.")
